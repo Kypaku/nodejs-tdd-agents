@@ -1,6 +1,6 @@
 import axios from "axios"
 import type { ModelSettings, GuestSettings } from "../utils/types"
-import AgentService, { executeTaskAgent } from "../services/agent-service"
+import { createTasksAgent, executeTaskAgent, startGoalAgent } from "../services/AgentService"
 import {
     AgentCommands,
     DEFAULT_MAX_LOOPS_CUSTOM_API_KEY,
@@ -13,7 +13,7 @@ import type { RequestBody } from "../utils/interfaces"
 import { updateAgent } from "@/api/json"
 import { IAgent, ITask } from "@/types"
 import { getFilesInDirectory } from "@/helpers"
-import { readFile, runAsync, runSync, writeFile } from "@/helpers/node_gm"
+import { readFile, runAsync, runSync, sleep, writeFile } from "@/helpers/node_gm"
 import { handleContentBeforeWrite } from "@/utils/contentHandlers"
 import { fixPrompt } from "@/utils/prompts"
 
@@ -54,16 +54,8 @@ class AutonomousAgent {
     }
 
     async run(agent: IAgent) {
-        const { isGuestMode, isValidGuest } = this.guestSettings
-        if (isGuestMode && !isValidGuest && !this.modelSettings.customApiKey) {
-            this.sendErrorMessage("errors.invalid-guest-key")
-            this.stopAgent()
-            return
-        }
         this.id = agent.id
         this.isRunning = true
-
-        //   this.sendGoalMessage()
 
         // Initialize by getting tasks
         try {
@@ -72,7 +64,7 @@ class AutonomousAgent {
                 this.saveTasks()
             }
             for (const task of this.tasks) {
-                await new Promise((resolve) => setTimeout(resolve, TIMOUT_SHORT))
+                await sleep(TIMOUT_SHORT)
                 this.sendTaskMessage(task.content)
             }
         } catch (e) {
@@ -185,46 +177,21 @@ class AutonomousAgent {
     }
 
     async getInitialTasks(): Promise<ITask[]> {
-        if (this.shouldRunClientSide()) {
-            return await AgentService.startGoalAgent(this.modelSettings, this.goal)
-        }
-
-        const data = {
-            modelSettings: this.modelSettings,
-            goal: this.goal,
-        }
-        const res = await this.post(`/api/agent/start`, data)
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-argument
-        return res.data.newTasks as ITask[]
+        return await startGoalAgent(this.agent.settings || {}, this.goal)
     }
 
     async getAdditionalTasks(
         currentTask: ITask,
         result: string
     ): Promise<ITask[]> {
-        if (this.shouldRunClientSide()) {
-            return await AgentService.createTasksAgent(
-                this.modelSettings,
-                this.goal,
-                this.tasks,
-                currentTask,
-                result,
-                this.completedTasks
-            )
-        }
-
-        const data = {
-            modelSettings: this.modelSettings,
-            goal: this.goal,
-            tasks: this.tasks,
-            lastTask: currentTask,
-            result: result,
-            completedTasks: this.completedTasks,
-        }
-        //   const res = await this.post(`/api/agent/create`, data)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
-        //   return res.data.newTasks as ITask[]
+        return await createTasksAgent(
+            this.modelSettings,
+            this.goal,
+            this.tasks,
+            currentTask,
+            result,
+            this.completedTasks
+        )
     }
 
     async handleTaskResult(task: ITask, taskResult: string) {
@@ -260,11 +227,15 @@ class AutonomousAgent {
 
     async runTests(task: ITask) {
         let testsResult = ''
-        if (this.agent.settings.tests) {
-            for await (const test of this.agent.settings.tests) {
-                const result = await runAsync(test)
-                testsResult += result + '\n'
+        try {
+            if (this.agent.settings.tests) {
+                for await (const test of this.agent.settings.tests) {
+                    const result = await runAsync(test)
+                    testsResult += result + '\n'
+                }
             }
+        } catch (e) {
+            console.error('runTests:' + e)
         }
         console.log("runTests", { testsResult })
         this.sendMessage({ type: "tests", value: testsResult })
@@ -276,8 +247,9 @@ class AutonomousAgent {
         //   content && (task.additionalInformation.files = [{ path, content }])
         // Check file is already in task and if so, don't just update it
         this.agent.settings.dirs = this.agent.settings.dirs || []
+        const dirs = [this.agent.dir, ...this.agent.settings.dirs]
         // Check if file is in the allowed directories (this.agent.settings.dirs) and if not, don't add it
-        if (!this.agent.settings.dirs.some((dir) => path.startsWith(dir))) {
+        if (!dirs.some((dir) => path.startsWith(dir))) {
             !task.additionalInformation.files && (task.additionalInformation.files = [])
             const existingFile = task.additionalInformation.files?.find((file) => file.path === path)
             if (existingFile) {
@@ -293,20 +265,21 @@ class AutonomousAgent {
 
     writeFile(path: string, content: string) {
         // check if the agent is allowed to write files
-        this.sendMessage({ type: "system", value: `File write: the feature temporarily disabled` })
-        // if (!this.agent.settings.allowWrite) {
-        //     this.sendErrorMessage(`errors.agent-not-allowed-to-write`)
-        //     return
-        // }
-        // // check if file is in the allowed directories (this.agent.settings.dirs) and if not, don't add it
-        // if (!this.agent.settings.dirs.some((dir) => path.startsWith(dir))) {
-        //     this.sendErrorMessage(`errors.file-not-in-allowed-dirs: ` + path)
-        //     return
-        // }
-        // writeFile(path, handleContentBeforeWrite(path, content))
-        // setTimeout(() => {
-        //     this.sendMessage({ type: "system", value: `File written: ${path}` })
-        // }, 0)
+        if (!this.agent.settings.allowWrite) {
+            this.sendErrorMessage(`errors.agent-not-allowed-to-write`)
+            return
+        }
+        this.agent.settings.dirs = this.agent.settings.dirs || []
+        const dirs = [this.agent.dir, ...this.agent.settings.dirs]  
+        // check if file is in the allowed directories (this.agent.settings.dirs) and if not, don't add it
+        if (!dirs?.some((dir) => path.startsWith(dir))) {
+            this.sendErrorMessage(`errors.file-not-in-allowed-dirs: ` + path)
+            return
+        }
+        writeFile(path, handleContentBeforeWrite(path, content))
+        setTimeout(() => {
+            this.sendMessage({ type: "system", value: `File written: ${path}` })
+        }, 0)
     }
 
     getFileContent(path: string): string {
@@ -315,7 +288,8 @@ class AutonomousAgent {
     }
 
     getFileSystem(): string[] {
-        const fileSystem = this.agent.settings.dirs.map((dir) => getFilesInDirectory(dir, dir).map((dirOne) => dirOne.fullPath)).flat()
+        const dirs = [this.agent.dir, ...this.agent.settings.dirs]
+        const fileSystem = dirs.map((dir) => getFilesInDirectory(dir, dir).map((dirOne) => dirOne.fullPath)).flat()
         return fileSystem
     }
 
@@ -340,26 +314,15 @@ class AutonomousAgent {
     }
 
     async executeTask(task: ITask): Promise<string> {
-        if (this.shouldRunClientSide()) {
-            const taskResult = await executeTaskAgent(
-                this.modelSettings,
-                this.goal,
-                task,
-                this.agent.settings
-            )
-            this.handleTaskResult(task, taskResult)
-            await this.runTests(task)
-            return taskResult
-        }
-
-        const data = {
-            modelSettings: this.modelSettings,
-            goal: this.goal,
-            task: task,
-        }
-        //   const res = await this.post("/api/agent/execute", data)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-argument
-        //   return res.data.response as string
+        const taskResult = await executeTaskAgent(
+            this.modelSettings,
+            this.goal,
+            task,
+            this.agent.settings
+        )
+        this.handleTaskResult(task, taskResult)
+        await this.runTests(task)
+        return taskResult
     }
 
     private async post(url: string, data: RequestBody) {
@@ -374,10 +337,6 @@ class AutonomousAgent {
 
             throw e
         }
-    }
-
-    private shouldRunClientSide() {
-        return true //! !this.modelSettings.customApiKey
     }
 
     stopAgent() {
@@ -422,7 +381,7 @@ class AutonomousAgent {
     }
 
     sendThinkingMessage(msg: string) {
-        this.sendMessage({ type: "thinking", value: "Thinking... " + msg })
+        this.sendMessage({ type: "thinking", value: "Thinking... " + (this.agent.settings.sequentialMode ? '' : msg) })
     }
 
     sendTaskMessage(task: string) {

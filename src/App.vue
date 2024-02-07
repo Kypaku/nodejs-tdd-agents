@@ -12,8 +12,12 @@
     import TheFooter from '@/components/partials/TheFooter.vue'
     import { IAgent } from '@/types'
     import { getAgents } from './api/json'
+    import SimpleGPT from 'gpt-simple-api-ts'
+    import ls from 'local-storage'
 
-    (window as any).numRequests = 0
+    (window as any).numRequests = 0;
+
+    (window as any).api = new SimpleGPT({ key: ls("apiKey") as unknown as string || '' })
 
     export default defineComponent({
         components: {
@@ -25,6 +29,7 @@
             return {
                 agents: [] as IAgent[],
                 numRequests: (window as any).numRequests,
+                api: (window as any).api,
             }
         },
         computed: {

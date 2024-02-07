@@ -30,14 +30,13 @@ export const createModel = (settings: ModelSettings) => {
 
 const qq = "`"
 
-export const startGoalPrompt = new PromptTemplate({
-    template:
-`You are an autonomous task creation AI called AgentGPT
-You have the following objective QQQ{goal}QQQ
-Create a list of zero to three tasks to be completed by your AI system such that your goal is more closely reached or completely reached
-Return the response as an array of strings in JSON format. Use QQQ{customLanguage}QQQ`.replaceAll("QQQ", qq),
-    inputVariables: ["goal", "customLanguage"],
-})
+export const startGoalPrompt = (goal, customLanguage) => {
+    return `You are an autonomous task creation AI called AgentGPT that created to work with Node.js projects
+    You have the following objective QQQ${goal}QQQ
+    Check the test results to estimate your progress.
+    Create a list of zero to three tasks to be completed by your AI system such that your goal is more closely reached or completely reached
+    Return the response as an array of strings in JSON format. Use QQQ${customLanguage}QQQ`.replaceAll("QQQ", qq)
+}
 
 export const executeTaskPrompt = new PromptTemplate({
     template:

@@ -781,7 +781,7 @@ export function runAsync(cmd: string): Promise<string> {
             }
             if (stderr) {
                 console.error(`runAsync stderr: ${stderr}`);
-                return;
+                resolve(stderr.toString())
             }
             resolve(stdout.toString())
         });

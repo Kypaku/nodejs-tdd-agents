@@ -5,7 +5,7 @@
             v-model:value="apiKey"
             :error="!apiKey"
             label="API Key"
-            @update:value="val => ls('apiKey', val)"  />
+            @update:value="updateKey"  />
     </div>
 </template>
 
@@ -13,6 +13,7 @@
     import { defineComponent, PropType } from 'vue'
     import ls from 'local-storage'
     import InputText from './InputText.vue'
+    import SimpleGPT from 'gpt-simple-api-ts'
 
     export default defineComponent({
         props: {
@@ -31,6 +32,10 @@
 
         },
         methods: {
+            updateKey(val: string) {
+                ls('apiKey', val);
+                (window as any).api = new SimpleGPT({ key: val })
+            },
 
         },
     })

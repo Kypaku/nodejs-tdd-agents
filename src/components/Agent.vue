@@ -19,6 +19,13 @@
                 :value="agent?.goal"
                 @update:value="val => updateAgent('goal', val)"/>
         </div>
+        <div class="dir">
+            <InputText
+                class="w-full"
+                :label="'Directory: '"
+                :value="agent?.dir"
+                @update:value="val => updateAgent('dir', val)"/>
+        </div>
         <div class="panel flex-center-between w-full mt-2">
             <div class="flex-center">
                 <button @click="showSettings = !showSettings" class="mr-2 text-white hover:bg-gray-600 bg-gray-700 p-1 rounded" >
@@ -99,7 +106,7 @@
             return {
                 q: '',
                 showSettings: false,
-                agentInstance: null as AutonomousAgent,
+                agentInstance: null as AutonomousAgent | null,
                 messages: [] as IMessage[],
                 settings: (ls as any)('settings') || {},
             }

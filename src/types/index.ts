@@ -9,6 +9,7 @@ export interface IAgentSettings {
     allowWrite?: boolean
     allowRead?: boolean
     sequentialMode?: boolean
+    language?: string
 }
 export interface ITask {
     content?: string
@@ -38,6 +39,7 @@ export interface IAgent {
     name: string
     description?: string
     goal: string
+    dir?: string
     state: 'pending' | 'running' | 'stopped' | 'error'
     tasks?: ITask[]
     instance?: AutonomousAgent

@@ -8,18 +8,13 @@ import type { ModelSettings } from "../utils/types"
 import { LLMChain } from "langchain/chains"
 import { extractTasks } from "../utils/helpers"
 import { IAgentSettings, ITask } from "@/types"
+import SimpleGPT from "gpt-simple-api-ts"
 
-async function startGoalAgent(modelSettings: ModelSettings, goal: string): Promise<ITask[]> {
+export async function startGoalAgent(settings: IAgentSettings, goal: string): Promise<ITask[]> {
     (window as any).numRequests++
-    const completion = await new LLMChain({
-        llm: createModel(modelSettings),
-        prompt: startGoalPrompt,
-    }).call({
-        goal,
-        customLanguage: modelSettings.customLanguage,
-    })
-    console.log("Completion:" + (completion.text as string))
-    return extractTasks(completion.text as string, []).map((stringOne) => {
+    const prompt = startGoalPrompt(goal, settings.language || 'en') 
+    const res = await ((window as any).api as SimpleGPT).getFirst(prompt, settings)
+    return extractTasks(res, []).map((stringOne) => {
         return {
             content: stringOne,
             created: new Date().toISOString(),
@@ -78,14 +73,14 @@ export async function executeTaskAgent(
     return completion.text as string
 }
 
-async function createTasksAgent(
+export async function createTasksAgent(
     modelSettings: ModelSettings,
     goal: string,
     tasks: ITask[],
     lastTask: ITask,
     result: string,
     completedTasks: string[] | undefined
-) {
+): Promise<ITask[]> {
     (window as any).numRequests++
     const completion = await new LLMChain({
         llm: createModel(modelSettings),
@@ -105,25 +100,3 @@ async function createTasksAgent(
         }
     })
 }
-
-interface AgentService {
-  startGoalAgent: (
-    modelSettings: ModelSettings,
-    goal: string
-  ) => Promise<ITask[]>;
-  createTasksAgent: (
-    modelSettings: ModelSettings,
-    goal: string,
-    tasks: ITask[],
-    lastTask: ITask,
-    result: string,
-    completedTasks: string[] | undefined
-  ) => Promise<ITask[]>;
-}
-
-const OpenAIAgentService: AgentService = {
-    startGoalAgent: startGoalAgent,
-    createTasksAgent: createTasksAgent,
-}
-
-export default OpenAIAgentService
