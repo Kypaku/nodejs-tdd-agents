@@ -1,5 +1,6 @@
 <template>
     <div class="message text-sm mt-2" >
+        <span>{{ index }}: </span>
         <div>
             <span class="text-xs text-gray-400"  v-if="message.time">{{ new Date(message.time).toLocaleString() }}</span>
         </div>
@@ -11,9 +12,17 @@
                 </div>
                 <span :key="i + 'text'" v-else>{{ segment.text }}</span>
             </template>
+            <div>
+                <button @click="test(message)" class="bg-gray-700" >Test</button>
+            </div>
         </template>
         <div class="tests" v-else>
-            <Accordeon :title="'Tests'">
+            <Accordeon>
+                <template #title>
+                    <b class="text-xl" >
+                        Tests <span class="text-sm test-value" >{{ testsValue }}</span>
+                    </b>
+                </template>
                 <span class="pre-wrap" >
                     <pre class="overflow-auto max-h-80"><code>{{ message?.value?.trim()}}</code></pre>
                 </span>
@@ -23,12 +32,21 @@
 </template>
 
 <script lang='ts'>
-    import { IMessage } from '@/types'
+    import { IAgent, IMessage } from '@/types'
     import { defineComponent, PropType } from 'vue'
     import Accordeon from './misc/Accordeon.vue'
+    import AutonomousAgent from '@/models/AutonomousAgent'
 
     export default defineComponent({
         props: {
+            index: {
+                type: Number,
+                default: () => 0
+            },
+            agent: {
+                type: Object as PropType<IAgent>,
+                default: () => null
+            },
             message: Object as PropType<IMessage>,
 
         },
@@ -43,12 +61,22 @@
             }
         },
         computed: {
+            testsValue(): string {
+                // get line like Tests:       4 failed, 1 passed, 5 total
+                const tests = this.message?.value?.match(/Tests:.*?\n/) || []
+                return tests[0] || ''
+            },
+
             segments(): {isCode?: boolean, text: string}[] {
                 const divider = "`" + "`" + "`"
                 return (this.message.message || this.message.value)?.split(divider)?.map((dividerOne, i) => ({ isCode: !!(i % 2), text: dividerOne.trim() })) || []
             },
         },
         methods: {
+            test(message) {
+                console.log('test', this.agent?.agentInstance);
+                (this.agent?.agentInstance as AutonomousAgent)?.handleTaskResult(this.agent.agentInstance.uncompletedTasks[0], message.value)
+            },
 
         },
     })
@@ -56,6 +84,10 @@
     </script>
 
 <style lang="scss" scoped>
+    .test-value{
+        font-weight: normal;
+    }
+
     .tests{
         max-width: 600px;
     }

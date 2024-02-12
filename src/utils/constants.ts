@@ -13,4 +13,5 @@ export enum AgentCommands {
     "NEED_URL_CONTENT" = "NEED_URL_CONTENT",
     "INPUT" = "INPUT",
     "TESTS" = "TESTS",
+    "COMPLETE_TASK" = "COMPLETE_TASK",
 }

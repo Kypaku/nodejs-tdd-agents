@@ -655,22 +655,24 @@ export function parentDir(filename: string) {
     return getBasename(path.dirname(filename))
 }
 
-export function parentDirectory(filename: string, ...others: any[]) {
+export function parentDirectory(filename: string, ...others: any[]): string {
     if (others) {
         const all = [filename, ...others]
         const parents = all.map(parentDirectories)
-        return transpose(shrinkRight(parents as any)).filter(el => el.every(_el => _el === el[0])).reverse()[0][0]
+        return transpose(shrinkRight(parents)).filter(el => el.every(_el => _el === el[0])).reverse()[0][0]
     } else {
         return path.dirname(filename)
     }
 }
 
 export function isParentDirectory(dir: string, filename: string): boolean {
-    return parentDirectory(filename) === dir
+    return path.normalize(parentDirectory(filename)) === path.normalize(dir)
 }
 
 export function isParentDirectoryR(dir: string, filename: string): boolean {
-    return !!parentDirectories(filename)?.includes(dir)
+    const parentDirs = parentDirectories(filename)?.map((filenameOne) => path.normalize(filenameOne))
+    const theDir = path.normalize(dir) 
+    return !!parentDirs.includes(theDir)
 }
 
 export const existFile = fs?.existsSync
@@ -768,7 +770,7 @@ export function convertToArgs(args: any) {
 
 export function callSync(cmd: string, args: any, options?) {
     const proc = spawnSync(cmd, args, options)
-    console.log('callSync', cmd, proc);
+    console.log('callSync', cmd, proc)
     return proc.output.toString()
 }
 
@@ -776,15 +778,15 @@ export function runAsync(cmd: string): Promise<string> {
     return new Promise((resolve, reject) => {
         exec(cmd, (error, stdout, stderr) => {
             if (error) {
-                console.error(`runAsync error: ${error}`);
+                console.error(`runAsync error: ${error}`)
                 resolve(error.toString())
             }
             if (stderr) {
-                console.error(`runAsync stderr: ${stderr}`);
+                console.error(`runAsync stderr: ${stderr}`)
                 resolve(stderr.toString())
             }
             resolve(stdout.toString())
-        });
+        })
     })
 }
 

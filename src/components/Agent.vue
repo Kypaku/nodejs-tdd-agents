@@ -19,12 +19,13 @@
                 :value="agent?.goal"
                 @update:value="val => updateAgent('goal', val)"/>
         </div>
-        <div class="dir">
-            <InputText
+        <div class="dir flex-center">
+            <InputFile
                 class="w-full"
                 :label="'Directory: '"
                 :value="agent?.dir"
-                @update:value="val => updateAgent('dir', val)"/>
+                @update:value="val => updateAgent('dir', val)"
+                :isDir="true"/>
         </div>
         <div class="panel flex-center-between w-full mt-2">
             <div class="flex-center">
@@ -41,6 +42,7 @@
             v-if="showSettings"
             :value="agent.settings || {}"
             @update:value="val => updateAgent('settings', val)"
+            :agent="agent"
             class="mt-2" />
         <div class="tasks mt-4" v-if="tasks.length">
             <div class="flex-center-between">
@@ -50,6 +52,7 @@
                 </div>
             </div>
             <Task
+                :class="{'opacity-50': task.completed}"
                 @deleteTask="deleteTask(i)"
                 :task="task"
                 @editTask="editTask(i)"
@@ -68,7 +71,12 @@
                 v-model="q"/>
         </div>
         <div class="log">
-            <Message :message="item" v-for="(item, i) in filteredMessages" :key="item.time + '_' + i"/>
+            <Message
+                :message="item"
+                v-for="(item, i) in filteredMessages"
+                :agent="agent"
+                :index="filteredMessages.length - i"
+                :key="item.time + '_' + i"/>
         </div>
     </div>
 </template>
@@ -87,6 +95,7 @@
     import IconSettings from './misc/icons/IconSettings.vue'
     import Settings from './partials/Settings.vue'
     import { localeIncludes } from '@/helpers/node_gm'
+    import InputFile from './misc/InputFile.vue'
 
     export default defineComponent({
         props: {
@@ -99,7 +108,8 @@
             InputText,
             InputTextarea,
             IconSettings,
-            Settings
+            Settings,
+            InputFile
         },
         // emits: ['update:modelValue'], this.$emit('update:modelValue', title)
         data() {

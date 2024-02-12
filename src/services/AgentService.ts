@@ -7,12 +7,12 @@ import {
 import type { ModelSettings } from "../utils/types"
 import { LLMChain } from "langchain/chains"
 import { extractTasks } from "../utils/helpers"
-import { IAgentSettings, ITask } from "@/types"
+import { IAdditionalInformation, IAgentSettings, ITask } from "@/types"
 import SimpleGPT from "gpt-simple-api-ts"
 
-export async function startGoalAgent(settings: IAgentSettings, goal: string): Promise<ITask[]> {
+export async function startGoalAgent(settings: IAgentSettings, goal: string, additionalInformation?: IAdditionalInformation): Promise<ITask[]> {
     (window as any).numRequests++
-    const prompt = startGoalPrompt(goal, settings.language || 'en') 
+    const prompt = startGoalPrompt(goal, settings.language || 'en', additionalInformation) 
     const res = await ((window as any).api as SimpleGPT).getFirst(prompt, settings)
     return extractTasks(res, []).map((stringOne) => {
         return {
@@ -68,6 +68,7 @@ export async function executeTaskAgent(
         files: renderFiles(task.additionalInformation?.files),
         urls: renderUrls(task.additionalInformation?.urls),
         testsResult: task.additionalInformation?.testsResult || "Unknown",
+        prevAnswers: task.additionalInformation?.prevAnswers?.join("\n") || "Unknown",
     })
 
     return completion.text as string

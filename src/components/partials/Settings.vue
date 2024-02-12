@@ -57,6 +57,9 @@
         </div>
         <div class="tests">
             <b class="mt-4" >Tests:</b>
+            <button @click.stop="runTests()" class="py-1 px-2 bg-blue-800 toggle-button text-sm rounded mt-2 ml-2">
+                {{ '▶️' }}
+            </button>
             <List :addPlaceholder="'npm run test'" :items="settings?.tests || defaultSettings?.tests || []" @add="({name, pos}) => setSettings('tests', [name, ...(settings?.tests || defaultSettings?.tests || [])])">
                 <template #default="{item}">
                     {{ item  }}
@@ -75,7 +78,7 @@
     import ls from 'local-storage'
     // import Warning from './misc/Warning.vue'
     import * as path from 'path'
-    import { IAgentSettings } from '@/types'
+    import { IAgent, IAgentSettings } from '@/types'
     import List from '../misc/list/List.vue'
     import ToggleSwitch from '../misc/ToggleSwitch.vue'
     import { InputTextSuggestion } from '../misc/InputTextarea.vue'
@@ -86,6 +89,7 @@
     export default defineComponent({
         props: {
             value: Object as PropType<IAgentSettings>,
+            agent: Object as PropType<IAgent>,
         },
         components: {
             InputText,
@@ -115,6 +119,9 @@
 
         },
         methods: {
+            runTests() {
+                this.agent.agentInstance?.runTests(this.agent.agentInstance.uncompletedTasks[0])
+            },
             setSettings(key: string, val: any) {
                 if (this.value) {
                     this.$emit('update:value', { ...this.settings, [key]: val })

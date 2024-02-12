@@ -11,28 +11,31 @@ export interface IAgentSettings {
     sequentialMode?: boolean
     language?: string
 }
+
+export interface IAdditionalInformation {
+    fromUser?: {
+        ask: string
+        answer?: string
+    }[]
+    files?: {
+        path: string
+        content: string
+    }[],
+    urls?: {
+        url: string
+        content: string
+    }[]
+    fileSystem?: string[]
+    testsResult?: string
+    prevAnswers?: string[]
+} 
 export interface ITask {
     content?: string
     created?: string
     completed?: string
     deleted?: string
     result?: string
-    additionalInformation?: {
-        fromUser?: {
-            ask: string
-            answer?: string
-        }[]
-        files?: {
-            path: string
-            content: string
-        }[],
-        urls?: {
-            url: string
-            content: string
-        }[]
-        fileSystem?: string[]
-        testsResult?: string
-    }
+    additionalInformation?: IAdditionalInformation
 }
 export interface IAgent {
     id: string
