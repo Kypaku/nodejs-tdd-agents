@@ -120,10 +120,10 @@ class AutonomousAgent {
             const currentTask = this.uncompletedTasks[0]
             this.sendThinkingMessage(currentTask.content)
 
-            const result = await this.executeTask(currentTask as ITask)
+            const {result, prompt} = await this.executeTask(currentTask as ITask)
 
             this.saveTasks()
-            this.sendExecutionMessage(currentTask, result)
+            this.sendExecutionMessage(currentTask, result, prompt)
 
             await this.runTests(currentTask)
         } else {
@@ -136,7 +136,7 @@ class AutonomousAgent {
 
             this.tasks.push(currentTask as ITask)
 
-            const result = await this.executeTask(currentTask as ITask)
+            const {result, prompt} = await this.executeTask(currentTask as ITask)
             this.saveTasks()
             this.sendExecutionMessage(currentTask, result)
 
@@ -262,6 +262,12 @@ class AutonomousAgent {
         console.log("runTests", { testsResult })
         this.sendMessage({ type: "tests", value: testsResult })
         task.additionalInformation.testsResult = testsResult
+        const testsValue = testsResult.match(/Tests:.*?\n/)?.[0]
+        const total = +testsValue?.match(/(\d+) total/)?.[1]
+        const passed = +testsValue?.match(/(\d+) passed/)?.[1]
+        if (total === passed) {
+            this.sendMessage({ type: "system", value: "All tests passed!" })
+        }
     }
 
     addFileToTask(_path: string, task: ITask) {
@@ -352,30 +358,17 @@ class AutonomousAgent {
         return res.data
     }
 
-    async executeTask(task: ITask): Promise<string> {
-        const taskResult = await executeTaskAgent(
+    async executeTask(task: ITask): Promise<{result, prompt}> {
+        const {result, prompt} = await executeTaskAgent(
             this.modelSettings,
             this.goal,
             task,
-            this.agent.settings
+            this.agent.settings,
+            task.additionalInformation
         )
-        this.handleTaskResult(task, taskResult)
-        task.additionalInformation.prevAnswers = [taskResult]
-        return taskResult
-    }
-
-    private async post(url: string, data: RequestBody) {
-        try {
-            return await axios.post(url, data)
-        } catch (e) {
-            this.shutdown()
-
-            if (axios.isAxiosError(e) && e.response?.status === 429) {
-                this.sendErrorMessage("rate-limit")
-            }
-
-            throw e
-        }
+        this.handleTaskResult(task, result)
+        task.additionalInformation.prevAnswers = [result]
+        return {result, prompt}
     }
 
     stopAgent() {
@@ -415,7 +408,7 @@ class AutonomousAgent {
     sendCompletedMessage() {
         this.sendMessage({
             type: "system",
-            value: "All tasks completed!",
+            value: "All tasks completed! ",
         })
     }
 
@@ -431,11 +424,12 @@ class AutonomousAgent {
         this.sendMessage({ type: "system", value: error })
     }
 
-    sendExecutionMessage(task: ITask, execution: string) {
+    sendExecutionMessage(task: ITask, execution: string, prompt?: string) {
         this.sendMessage({
             type: "action",
             info: `Executing "${task.content}"`,
             value: execution,
+            prompt,
         })
     }
 

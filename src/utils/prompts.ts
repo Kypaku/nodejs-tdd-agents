@@ -53,11 +53,10 @@ YOUR PREVIOUS ANSWERS:
 QQQ${additionalInformation.prevAnswers}QQQ` : ''}`.replaceAll("QQQ", qq)
 }
 
-export const executeTaskPrompt = new PromptTemplate({
-    template:
+export const executeTaskPrompt = (goal: string, task: string, customLanguage: string, additionalInformation?: {[key: string]: string}): string => (
 `You are an autonomous task execution AI called AgentGPT
-You have the following objective QQQ{goal}QQQ
-You have the following task QQQ{task}QQQ
+You have the following objective QQQ${goal}QQQ
+You have the following task QQQ${task}QQQ
 Execute the task and return the response as a string
 if you need additional information than return ${AgentCommands.INPUT}: $description (e.g. ${AgentCommands.INPUT}: I need more information about the task)
 if you need to know structure of the directories you have access then return ${AgentCommands.NEED_FILE_SYSTEM}
@@ -65,25 +64,22 @@ if you need to know content of specific file then return ${AgentCommands.NEED_FI
 if you need to write content to specific file then return ${AgentCommands.WRITE_FILE_CONTENT}: $absolutePath (e.g. ${AgentCommands.WRITE_FILE_CONTENT}: C:/path/to/index.js \n$RAW_CONTENT) so $RAW_CONTENT is literal content to write, no need to add quotes, name of file or programming language
 if you need to know content of any url then return ${AgentCommands.NEED_URL_CONTENT}: $url (e.g. ${AgentCommands.NEED_URL_CONTENT}: https://www.google.com)
 if you think that the task is completed then return ${AgentCommands.COMPLETE_TASK}
-Use QQQ{customLanguage}QQQ
+Use QQQ${customLanguage}QQQ
 Additional information:
 FROM_USER:
-QQQ{fromUser}QQQ
+QQQ${additionalInformation.fromUser}QQQ
 FILE_SYSTEM:
-QQQ{fileSystem}QQQ
+QQQ${additionalInformation.fileSystem}QQQ
 FILES:
-QQQ{files}QQQ
+QQQ${additionalInformation.files}QQQ
 URLS:
-QQQ{urls}QQQ
+QQQ${additionalInformation.urls}QQQ
 TESTS_RESULT:
-QQQ{testsResult}QQQ
+QQQ${additionalInformation.testsResult}QQQ
 YOR PREVIOUS ANSWERS:
-QQQ{prevAnswers}QQQ
-`.replaceAll("QQQ", qq),
-    inputVariables: [
-        "goal", "task", "tasks", "customLanguage", "fromUser", "fileSystem", "files", "urls", "testsResult", "prevAnswers"
-    ],
-})
+QQQ${additionalInformation.prevAnswers}QQQ
+`.replaceAll("QQQ", qq)
+)
 
 export const createTasksPrompt = new PromptTemplate({
     template:

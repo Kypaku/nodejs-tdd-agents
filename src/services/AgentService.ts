@@ -52,26 +52,21 @@ export async function executeTaskAgent(
     modelSettings: ModelSettings,
     goal: string,
     task: ITask,
-    settings: IAgentSettings
-): Promise<string> {
+    settings: IAgentSettings,
+    additionalInformation?: IAdditionalInformation
+): Promise< {result, prompt}> {
     (window as any).numRequests++
-    const completion = await new LLMChain({
-        llm: createModel(modelSettings),
-        prompt: executeTaskPrompt,
-    }).call({
-        goal,
-        task: task.content,
-        customLanguage: modelSettings.customLanguage,
-        // "fromUser", "fileSystem", "files", "urls"
-        fromUser: renderFromUser(task.additionalInformation?.fromUser),
-        fileSystem: [...(task.additionalInformation?.fileSystem || []), settings.dirs?.join(", ")].filter(Boolean) || "Unknown",
-        files: renderFiles(task.additionalInformation?.files),
-        urls: renderUrls(task.additionalInformation?.urls),
-        testsResult: task.additionalInformation?.testsResult || "Unknown",
-        prevAnswers: task.additionalInformation?.prevAnswers?.join("\n") || "Unknown",
-    })
+    const prompt = executeTaskPrompt(goal, task.content, settings.language || 'en', {
+        fromUser: renderFromUser(additionalInformation?.fromUser),
+        fileSystem: [...(additionalInformation?.fileSystem || []), settings.dirs?.join(", ")].filter(Boolean).join(', ') || "Unknown",
+        files: renderFiles(additionalInformation?.files),
+        urls: renderUrls(additionalInformation?.urls),
+        testsResult: additionalInformation?.testsResult || "Unknown",
+        prevAnswers: additionalInformation?.prevAnswers?.join("\n") || "Unknown",
+    }) 
+    const result = await ((window as any).api as SimpleGPT).getFirst(prompt, settings)
 
-    return completion.text as string
+    return {result, prompt}
 }
 
 export async function createTasksAgent(

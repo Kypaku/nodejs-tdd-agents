@@ -10,6 +10,8 @@ export interface IAgentSettings {
     allowRead?: boolean
     sequentialMode?: boolean
     language?: string
+    costPer1KInput?: number
+    costPer1KOutput?: number
 }
 
 export interface IAdditionalInformation {
@@ -51,6 +53,7 @@ export interface IAgent {
 
 export interface IMessage {
     id?: string
+    prompt?: string
     message: string
     value?: string
     type?: 'system' | 'action' | 'thinking' | 'goal' | 'task' | 'tests'

@@ -47,6 +47,19 @@
             :value="settings.language"
             :placeholder="settings.language || defaultSettings.language"
             @update:value="val => setSettings('language', val)" />
+        <a href="https://openai.com/pricing" target="_blank" class="mt-3 text-sm block underline" >OpenAI pricing</a>
+        <InputText
+            class="mt-1"
+            label="Cost per 1K tokens. Input: "
+            :value="settings.costPer1KInput"
+            :placeholder="settings.costPer1KInput || defaultSettings.costPer1KInput"
+            @update:value="val => setSettings('costPer1KInput', val)" />
+        <InputText
+            class="mt-1"
+            label="Output:"
+            :value="settings.costPer1KOutput"
+            :placeholder="settings.costPer1KOutput || defaultSettings.costPer1KOutput"
+            @update:value="val => setSettings('costPer1KOutput', val)" />
         <div class="dirs mt-4">
             <b class="" >Allowed directories:</b>
             <List :addPlaceholder="'/path/to/dir'" :items="settings?.dirs || defaultSettings?.dirs || []" @add="({name, pos}) => setSettings('dirs', [name, ...(settings?.dirs || defaultSettings?.dirs || [])])">

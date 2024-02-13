@@ -63,7 +63,17 @@
                 :key="i"/>
         </div>
         <div class="log-header mt-6">
-            <span class="text-xl"><b>Log </b><span class="text-sm">({{ messages?.length }})</span>: </span>
+            <span class="text-xl">
+                <b>Log: </b>
+                <span class="text-xs">
+                    All: {{ messages?.length }}
+                    &nbsp;|&nbsp;
+                    Queries: {{ answers?.length }}
+                    &nbsp;|&nbsp;
+                    Cost: ~{{ cost.toFixed(2) }}
+                    &nbsp;
+                </span>
+            </span>
             <input
                 type="search"
                 class="bg-gray-700 text-white p-1 rounded w-1/2"
@@ -94,7 +104,7 @@
     import TrashIcon from './misc/icons/TrashIcon.vue'
     import IconSettings from './misc/icons/IconSettings.vue'
     import Settings from './partials/Settings.vue'
-    import { localeIncludes } from '@/helpers/node_gm'
+    import { localeIncludes, total } from '@/helpers/node_gm'
     import InputFile from './misc/InputFile.vue'
 
     export default defineComponent({
@@ -122,6 +132,17 @@
             }
         },
         computed: {
+            cost(): number {
+                const promptsCost = total(this.answers.filter((answer) => answer.prompt).map(a => (a.prompt?.length / 4000) * this.settings.costPer1KInput)) 
+                const resultCost = total(this.answers.map(a => (a.value.length / 4000) * this.settings.costPer1KOutput))
+                // console.log("cost", this.answers.map(a => (a.value.length)))
+                return promptsCost + resultCost
+            },
+
+            answers(): IMessage[] {
+                return this.messages.filter(m => m.type === 'action' && m.value)
+            },
+
             filteredMessages(): IMessage[] {
                 return [...this.messages]
                     .reverse()
