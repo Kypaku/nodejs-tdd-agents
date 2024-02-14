@@ -13,14 +13,14 @@
                 <span :key="i + 'text'" v-else>{{ segment.text }}</span>
             </template>
             <div>
-                <button @click="test(message)" class="bg-gray-700" >Test</button>
+                <button @click="test(message)" class="bg-gray-700 opacity-50" >Test</button>
             </div>
         </template>
         <div class="tests" v-else>
             <Accordeon>
                 <template #title>
                     <b class="text-xl" >
-                        Tests <span class="text-sm test-value" >{{ testsValue }}</span>
+                        Tests <br/> <span class="text-sm test-value" >{{ testsValue.replace(/ +/g, ' ').replace(/\n /g, '\n') }}</span>
                     </b>
                 </template>
                 <span class="pre-wrap" >
@@ -39,6 +39,10 @@
 
     export default defineComponent({
         props: {
+            messages: {
+                type: Array as PropType<IMessage[]>,
+                default: () => []
+            },
             index: {
                 type: Number,
                 default: () => 0
@@ -64,7 +68,8 @@
             testsValue(): string {
                 // get line like Tests:       4 failed, 1 passed, 5 total
                 const tests = this.message?.value?.match(/Tests:.*?\n/) || []
-                return tests[0] || ''
+                const testSuites = this.message?.value?.match(/Test Suites:.*?\n/) || []
+                return (tests[0] || '') + ' ' + (testSuites[0] || '') || ''
             },
 
             segments(): {isCode?: boolean, text: string}[] {
@@ -74,8 +79,9 @@
         },
         methods: {
             test(message) {
-                console.log('test', this.agent?.agentInstance);
-                (this.agent?.agentInstance as AutonomousAgent)?.handleTaskResult(this.agent.agentInstance.uncompletedTasks[0], message.value)
+                const task = this.agent.agentInstance.uncompletedTasks[0] || this.agent.agentInstance.tasks[0]
+                console.log('test', this.agent?.agentInstance, this.messages, { message });
+                (this.agent?.agentInstance as AutonomousAgent)?.handleTaskResult(task, message.value)
             },
 
         },

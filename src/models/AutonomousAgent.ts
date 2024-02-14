@@ -120,7 +120,7 @@ class AutonomousAgent {
             const currentTask = this.uncompletedTasks[0]
             this.sendThinkingMessage(currentTask.content)
 
-            const {result, prompt} = await this.executeTask(currentTask as ITask)
+            const { result, prompt } = await this.executeTask(currentTask as ITask)
 
             this.saveTasks()
             this.sendExecutionMessage(currentTask, result, prompt)
@@ -136,7 +136,7 @@ class AutonomousAgent {
 
             this.tasks.push(currentTask as ITask)
 
-            const {result, prompt} = await this.executeTask(currentTask as ITask)
+            const { result, prompt } = await this.executeTask(currentTask as ITask)
             this.saveTasks()
             this.sendExecutionMessage(currentTask, result)
 
@@ -191,12 +191,13 @@ class AutonomousAgent {
 
     async getInitialTasks(): Promise<void> {
         this.sendMessage({ type: "system", value: "Getting tasks..." })
-        const res = await startGoalAgent(this.agent.settings || {}, this.goal, this.tasks.at(-1)?.additionalInformation)
-        res.forEach((re) => {
+        const { result, raw, prompt } = await startGoalAgent(this.agent.settings || {}, this.goal, this.tasks.at(-1)?.additionalInformation)
+        result.forEach((re) => {
             re.additionalInformation = re.additionalInformation || {}
             re.additionalInformation.fileSystem = this.getFileSystem()
         })
-        this.tasks.push(...res)
+        this.sendMessage({ type: "hidden", value: raw, prompt })
+        this.tasks.push(...result)
         this.saveTasks()
     }
 
@@ -263,10 +264,14 @@ class AutonomousAgent {
         this.sendMessage({ type: "tests", value: testsResult })
         task.additionalInformation.testsResult = testsResult
         const testsValue = testsResult.match(/Tests:.*?\n/)?.[0]
-        const total = +testsValue?.match(/(\d+) total/)?.[1]
-        const passed = +testsValue?.match(/(\d+) passed/)?.[1]
+        let total = +testsValue?.match(/(\d+) total/)?.[1] || 0
+        let passed = +testsValue?.match(/(\d+) passed/)?.[1] || 0
+        const testsSuitesValue = testsResult.match(/Test Suites:.*?\n/)?.[0]
+        total += +(testsSuitesValue?.match(/(\d+) total/)?.[1] || 0)
+        passed += +(testsSuitesValue?.match(/(\d+) passed/)?.[1] || 0)
         if (total === passed) {
             this.sendMessage({ type: "system", value: "All tests passed!" })
+            this.stopAgent(true)
         }
     }
 
@@ -281,7 +286,7 @@ class AutonomousAgent {
         }
 
         const isParents = dirs.map((dir) => isParentDirectoryR(dir, _path))
-        if (!isParents.every(Boolean)) {
+        if (isParents.some(Boolean)) {
             !task.additionalInformation.files && (task.additionalInformation.files = [])
             const existingFile = task.additionalInformation.files?.find((file) => file.path === _path)
             if (existingFile) {
@@ -309,7 +314,7 @@ class AutonomousAgent {
         }
 
         const isParents = dirs.map((dir) => isParentDirectoryR(dir, _path))
-        if (!isParents.every(Boolean)) {
+        if (!isParents.some(Boolean)) {
             this.sendErrorMessage(`errors.file-not-in-allowed-dirs: ` + _path)
             return
         }
@@ -359,7 +364,7 @@ class AutonomousAgent {
     }
 
     async executeTask(task: ITask): Promise<{result, prompt}> {
-        const {result, prompt} = await executeTaskAgent(
+        const { result, prompt } = await executeTaskAgent(
             this.modelSettings,
             this.goal,
             task,
@@ -368,11 +373,15 @@ class AutonomousAgent {
         )
         this.handleTaskResult(task, result)
         task.additionalInformation.prevAnswers = [result]
-        return {result, prompt}
+        return { result, prompt }
     }
 
-    stopAgent() {
-        this.sendManualShutdownMessage()
+    stopAgent(byTest = false) {
+        if (byTest) {
+            this.sendActionMessage("manually-shutdown", "Agent successfully achieved the goal!")
+        } else {
+            this.sendManualShutdownMessage()
+        }
         this.isRunning = false
         this.shutdown()
         return

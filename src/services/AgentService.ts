@@ -10,16 +10,17 @@ import { extractTasks } from "../utils/helpers"
 import { IAdditionalInformation, IAgentSettings, ITask } from "@/types"
 import SimpleGPT from "gpt-simple-api-ts"
 
-export async function startGoalAgent(settings: IAgentSettings, goal: string, additionalInformation?: IAdditionalInformation): Promise<ITask[]> {
+export async function startGoalAgent(settings: IAgentSettings, goal: string, additionalInformation?: IAdditionalInformation): Promise<{result: ITask[], prompt: string, raw: string}> {
     (window as any).numRequests++
     const prompt = startGoalPrompt(goal, settings.language || 'en', additionalInformation) 
     const res = await ((window as any).api as SimpleGPT).getFirst(prompt, settings)
-    return extractTasks(res, []).map((stringOne) => {
+    const result = extractTasks(res, []).map((stringOne) => {
         return {
             content: stringOne,
             created: new Date().toISOString(),
         }
     })
+    return {result, prompt, raw: res}
 }
 
 export function renderFromUser(fromUser: any[]): string {

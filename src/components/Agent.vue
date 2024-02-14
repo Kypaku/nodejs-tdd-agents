@@ -70,7 +70,7 @@
                     &nbsp;|&nbsp;
                     Queries: {{ answers?.length }}
                     &nbsp;|&nbsp;
-                    Cost: ~{{ cost.toFixed(2) }}
+                    Cost: ~{{ cost.toFixed(2) }} $
                     &nbsp;
                 </span>
             </span>
@@ -83,6 +83,7 @@
         <div class="log">
             <Message
                 :message="item"
+                :messages="messages"
                 v-for="(item, i) in filteredMessages"
                 :agent="agent"
                 :index="filteredMessages.length - i"
@@ -133,20 +134,21 @@
         },
         computed: {
             cost(): number {
-                const promptsCost = total(this.answers.filter((answer) => answer.prompt).map(a => (a.prompt?.length / 4000) * this.settings.costPer1KInput)) 
+                const promptsCost = total(this.answers.filter((answer) => answer.prompt).map(a => (a.prompt?.length / 4000) * this.settings.costPer1KInput))
                 const resultCost = total(this.answers.map(a => (a.value.length / 4000) * this.settings.costPer1KOutput))
                 // console.log("cost", this.answers.map(a => (a.value.length)))
                 return promptsCost + resultCost
             },
 
             answers(): IMessage[] {
-                return this.messages.filter(m => m.type === 'action' && m.value)
+                return this.messages.filter(m => (m.type === 'action' || m.type === 'hidden') && m.value)
             },
 
             filteredMessages(): IMessage[] {
                 return [...this.messages]
                     .reverse()
-                    .filter((item) => {
+                    .filter((item: IMessage) => {
+                        if (item.type === 'hidden') return
                         if (!this.q) return true
                         return localeIncludes(item.value || '', this.q)
                     })

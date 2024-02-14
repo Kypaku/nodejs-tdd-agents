@@ -56,6 +56,6 @@ export interface IMessage {
     prompt?: string
     message: string
     value?: string
-    type?: 'system' | 'action' | 'thinking' | 'goal' | 'task' | 'tests'
+    type?: 'system' | 'action' | 'thinking' | 'goal' | 'task' | 'tests' | 'hidden'
     time: number
 }

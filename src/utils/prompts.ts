@@ -58,11 +58,11 @@ export const executeTaskPrompt = (goal: string, task: string, customLanguage: st
 You have the following objective QQQ${goal}QQQ
 You have the following task QQQ${task}QQQ
 Execute the task and return the response as a string
-if you need additional information than return ${AgentCommands.INPUT}: $description (e.g. ${AgentCommands.INPUT}: I need more information about the task)
-if you need to know structure of the directories you have access then return ${AgentCommands.NEED_FILE_SYSTEM}
-if you need to know content of specific file then return ${AgentCommands.NEED_FILE_CONTENT}: $absolutePath (e.g. ${AgentCommands.NEED_FILE_CONTENT}: C:/path/to/index.js)
-if you need to write content to specific file then return ${AgentCommands.WRITE_FILE_CONTENT}: $absolutePath (e.g. ${AgentCommands.WRITE_FILE_CONTENT}: C:/path/to/index.js \n$RAW_CONTENT) so $RAW_CONTENT is literal content to write, no need to add quotes, name of file or programming language
-if you need to know content of any url then return ${AgentCommands.NEED_URL_CONTENT}: $url (e.g. ${AgentCommands.NEED_URL_CONTENT}: https://www.google.com)
+if you need additional information then return ${AgentCommands.INPUT}: $description (e.g. ${AgentCommands.INPUT}: I need more information about the task)
+if you need to know the structure of the directories you have access then return ${AgentCommands.NEED_FILE_SYSTEM}
+if you need to know the content of a specific file then return ${AgentCommands.NEED_FILE_CONTENT}: $absolutePath (e.g. ${AgentCommands.NEED_FILE_CONTENT}: C:/path/to/index.js)
+if you need to write content to  a specific file then return ${AgentCommands.WRITE_FILE_CONTENT}: $absolutePath (e.g. ${AgentCommands.WRITE_FILE_CONTENT}: C:/path/to/index.js \n$RAW_CONTENT) so $RAW_CONTENT is literal content to write, no need to add quotes, name of file or programming language
+if you need to know the content of any url then return ${AgentCommands.NEED_URL_CONTENT}: $url (e.g. ${AgentCommands.NEED_URL_CONTENT}: https://www.google.com)
 if you think that the task is completed then return ${AgentCommands.COMPLETE_TASK}
 Use QQQ${customLanguage}QQQ
 Additional information:
@@ -76,7 +76,7 @@ URLS:
 QQQ${additionalInformation.urls}QQQ
 TESTS_RESULT:
 QQQ${additionalInformation.testsResult}QQQ
-YOR PREVIOUS ANSWERS:
+YOUR PREVIOUS ANSWERS:
 QQQ${additionalInformation.prevAnswers}QQQ
 `.replaceAll("QQQ", qq)
 )

@@ -40,7 +40,7 @@
             label="Temperature"
             :value="settings.temperature"
             :placeholder="settings.temperature || defaultSettings.temperature"
-            @update:value="val => setSettings('temperature', val)" />
+            @update:value="val => setSettings('temperature', +val)" />
         <InputText
             class="mt-2"
             label="Language"
