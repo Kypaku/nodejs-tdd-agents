@@ -248,10 +248,12 @@
                 this.agentInstance = new AutonomousAgent(
                     this.agent.name.trim(),
                     this.agent.goal.trim(),
-                    (message) => {
+                    (message: any) => {
+                        const msg = { time: +new Date(), ...(message || {}) }
                         addMessage(this.agent.id, { ...(message || {}) })
                         console.log(message)
-                        this.messages.push({ time: +new Date(), ...(message || {}) })
+                        this.messages.push(msg)
+                        return msg
                     },
                     console.log,
                     settings as any,

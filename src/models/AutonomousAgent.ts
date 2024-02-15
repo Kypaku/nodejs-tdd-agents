@@ -11,7 +11,7 @@ import type { Message } from "../types/agentTypes"
 import { v4 } from "uuid"
 import type { RequestBody } from "../utils/interfaces"
 import { updateAgent } from "@/api/json"
-import { IAgent, ITask } from "@/types"
+import { IAgent, IMessage, ITask } from "@/types"
 import { getFilesInDirectory } from "@/helpers"
 import { createDirectoryR, existFile, isParentDirectoryR, parentDirectories, parentDirectory, readFile, runAsync, runSync, sleep, writeFile } from "@/helpers/node_gm"
 import { handleContentBeforeWrite } from "@/utils/contentHandlers"
@@ -28,17 +28,18 @@ class AutonomousAgent {
     completedTasks: string[] = [];
     modelSettings: ModelSettings;
     isRunning = false;
-    renderMessage: (message: Message) => void;
+    renderMessage: (message: Message) => IMessage;
     shutdown: () => void;
     numLoops = 0;
     _id: string;
     id: string
     guestSettings: GuestSettings;
+    messages: IMessage[] = []
     agent: IAgent
     constructor(
         name: string,
         goal: string,
-        renderMessage: (message: Message) => void,
+        renderMessage: (message: Message) => IMessage,
         shutdown: () => void,
         modelSettings: ModelSettings,
         guestSettings: GuestSettings,
@@ -390,7 +391,8 @@ class AutonomousAgent {
 
     sendMessage(message: Message) {
         if (this.isRunning) {
-            this.renderMessage(message)
+            const msg = this.renderMessage(message)
+            this.messages.push(msg)
         }
     }
 
