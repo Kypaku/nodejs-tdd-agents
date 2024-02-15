@@ -32,9 +32,14 @@
         <ToggleSwitch
             class="mt-2"
             label="Allow write access to files"
-            title="Temporarily disabled due to avoid unwanted changes to your files."
             :value="settings.allowWrite"
             @update:value="val => setSettings('allowWrite', val)" />
+        <ToggleSwitch
+            class="mt-2"
+            :value="settings.sendFsEveryLoop"
+            label="Send file system every loop"
+            @update:value="val => setSettings('sendFsEveryLoop', val)" />
+        />
         <InputText
             class="mt-2"
             label="Temperature"

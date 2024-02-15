@@ -87,7 +87,7 @@
                 v-for="(item, i) in filteredMessages"
                 :agent="agent"
                 :index="filteredMessages.length - i"
-                :key="item.time + '_' + i"/>
+                :key="item.time"/>
         </div>
     </div>
 </template>

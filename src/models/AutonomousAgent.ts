@@ -217,9 +217,10 @@ class AutonomousAgent {
 
     async handleTaskResult(task: ITask, taskResult: string) {
         !task.additionalInformation && (task.additionalInformation = {})
-        if (taskResult.includes(AgentCommands.NEED_FILE_SYSTEM) && this.agent.settings.allowRead) {
+        if ((this.agent.settings.sendFsEveryLoop || taskResult.includes(AgentCommands.NEED_FILE_SYSTEM)) && this.agent.settings.allowRead) {
             task.additionalInformation.fileSystem = this.getFileSystem()
-        } else if (recognizeCommand(taskResult, AgentCommands.NEED_FILE_CONTENT) && this.agent.settings.allowRead) {
+        }
+        if (recognizeCommand(taskResult, AgentCommands.NEED_FILE_CONTENT) && this.agent.settings.allowRead) {
             const path = getPathFromRes(taskResult)
             path && this.addFileToTask(path, task)
         } else if (recognizeCommand(taskResult, AgentCommands.WRITE_FILE_CONTENT) && this.agent.settings.allowWrite) {

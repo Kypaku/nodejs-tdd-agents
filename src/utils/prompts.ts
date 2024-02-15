@@ -2,7 +2,7 @@ import { OpenAI } from "langchain/llms/openai"
 import { PromptTemplate } from "langchain/prompts"
 import type { ModelSettings } from "./types"
 import { AgentCommands, GPT_35_TURBO } from "./constants"
-import { IAdditionalInformation } from "@/types"
+import { IAdditionalInformation, IAgentSettings } from "@/types"
 
 export const createModel = (settings: ModelSettings) => {
     let _settings: ModelSettings | undefined = settings
@@ -53,13 +53,17 @@ YOUR PREVIOUS ANSWERS:
 QQQ${additionalInformation.prevAnswers}QQQ` : ''}`.replaceAll("QQQ", qq)
 }
 
-export const executeTaskPrompt = (goal: string, task: string, customLanguage: string, additionalInformation?: {[key: string]: string}): string => (
-`You are an autonomous task execution AI called AgentGPT
+export const executeTaskPrompt = (goal: string,
+    task: string,
+    customLanguage: string,
+    additionalInformation?: {[key: string]: string},
+    settings?: IAgentSettings): string => (
+    `You are an autonomous task execution AI called AgentGPT
 You have the following objective QQQ${goal}QQQ
 You have the following task QQQ${task}QQQ
 Execute the task and return the response as a string
 if you need additional information then return ${AgentCommands.INPUT}: $description (e.g. ${AgentCommands.INPUT}: I need more information about the task)
-if you need to know the structure of the directories you have access then return ${AgentCommands.NEED_FILE_SYSTEM}
+${settings.sendFsEveryLoop ? '' : `if you need to know the structure of the directories you have access then return ${AgentCommands.NEED_FILE_SYSTEM}`}
 if you need to know the content of a specific file then return ${AgentCommands.NEED_FILE_CONTENT}: $absolutePath (e.g. ${AgentCommands.NEED_FILE_CONTENT}: C:/path/to/index.js)
 if you need to write content to  a specific file then return ${AgentCommands.WRITE_FILE_CONTENT}: $absolutePath (e.g. ${AgentCommands.WRITE_FILE_CONTENT}: C:/path/to/index.js \n$RAW_CONTENT) so $RAW_CONTENT is literal content to write, no need to add quotes, name of file or programming language
 if you need to know the content of any url then return ${AgentCommands.NEED_URL_CONTENT}: $url (e.g. ${AgentCommands.NEED_URL_CONTENT}: https://www.google.com)

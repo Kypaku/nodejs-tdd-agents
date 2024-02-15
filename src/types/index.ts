@@ -9,6 +9,7 @@ export interface IAgentSettings {
     allowWrite?: boolean
     allowRead?: boolean
     sequentialMode?: boolean
+    sendFsEveryLoop?: boolean
     language?: string
     costPer1KInput?: number
     costPer1KOutput?: number

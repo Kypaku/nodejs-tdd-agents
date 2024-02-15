@@ -64,7 +64,7 @@ export async function executeTaskAgent(
         urls: renderUrls(additionalInformation?.urls),
         testsResult: additionalInformation?.testsResult || "Unknown",
         prevAnswers: additionalInformation?.prevAnswers?.join("\n") || "Unknown",
-    }) 
+    }, settings) 
     const result = await ((window as any).api as SimpleGPT).getFirst(prompt, settings)
 
     return {result, prompt}
