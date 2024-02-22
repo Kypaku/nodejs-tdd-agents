@@ -36,6 +36,12 @@ Read file system
 
 Write files
 
+### :warning: Important Warning
+Experimental Agents with Extensive Access
+This project includes experimental agents capable of accessing any file and executing any URL. This functionality theoretically poses a risk of data leakage.
+
+It is recommended to run this application in a secure environment with limited permissions to mitigate potential risks.
+
 ## How to Use
 
 ### OpenAI API Key
