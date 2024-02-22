@@ -5,6 +5,7 @@ export const messageParser = z.object({
     info: z.string().optional(),
     value: z.string(),
     prompt: z.string().optional(),
+    taskId: z.string().optional(),
 })
 
 export type Message = z.infer<typeof messageParser>;

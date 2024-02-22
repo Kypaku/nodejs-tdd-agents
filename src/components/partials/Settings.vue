@@ -18,7 +18,7 @@
             label="Max Tokens for answers"
             :value="settings.maxTokens"
             :placeholder="settings.maxTokens || defaultSettings.maxTokens"
-            @update:value="val => setSettings('maxTokens', val)" />
+            @update:value="val => setSettings('maxTokens', +val)" />
         <ToggleSwitch
             class="mt-2"
             label="Run tasks sequentially"
@@ -38,7 +38,7 @@
             class="mt-2"
             :value="settings.sendFsEveryLoop"
             label="Send file system every loop"
-            @update:value="val => setSettings('sendFsEveryLoop', val)" />
+            @update:value="val => setSettings('sendFsEveryLoop', val)"
         />
         <InputText
             class="mt-2"

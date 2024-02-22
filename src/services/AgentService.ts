@@ -9,19 +9,10 @@ import { LLMChain } from "langchain/chains"
 import { extractTasks } from "../utils/helpers"
 import { IAdditionalInformation, IAgentSettings, ITask } from "@/types"
 import SimpleGPT from "gpt-simple-api-ts"
+import { mapKeys, snakeCase } from 'lodash';
+import { readFile } from "@/helpers/node_gm"
 
-export async function startGoalAgent(settings: IAgentSettings, goal: string, additionalInformation?: IAdditionalInformation): Promise<{result: ITask[], prompt: string, raw: string}> {
-    (window as any).numRequests++
-    const prompt = startGoalPrompt(goal, settings.language || 'en', additionalInformation) 
-    const res = await ((window as any).api as SimpleGPT).getFirst(prompt, settings)
-    const result = extractTasks(res, []).map((stringOne) => {
-        return {
-            content: stringOne,
-            created: new Date().toISOString(),
-        }
-    })
-    return {result, prompt, raw: res}
-}
+
 
 export function renderFromUser(fromUser: any[]): string {
     if (!fromUser) return ""
@@ -38,7 +29,8 @@ export function renderFromUser(fromUser: any[]): string {
 export function renderFiles(files: any[]): string {
     if (!files) return ""
     return `Files:\n` + files.map((fileOne) => {
-        return 'The Path: ' + fileOne.path + ":\nThe Content: " + fileOne.content
+        const content = readFile(fileOne.path)
+        return 'The Path: ' + fileOne.path + ":\nThe Content: " + content
     }).join("\n")
 }
 
@@ -49,6 +41,35 @@ export function renderUrls(urls: any[]): string {
     }).join("\n")
 }
 
+export async function getAnswer(prompt, settings): Promise<string> {
+    return await ((window as any).api as SimpleGPT).getFirst(prompt, mapKeys(settings, (value, key) => snakeCase(key)))
+}
+
+export function renderInfo(additionalInformation: IAdditionalInformation, settings: IAgentSettings): {[key: string]: string} {
+    return {
+        fromUser: renderFromUser(additionalInformation?.fromUser),
+        fileSystem: [...(additionalInformation?.fileSystem || []), settings.dirs?.join(", ")].filter(Boolean).join(', ') || "Unknown",
+        files: renderFiles(additionalInformation?.files),
+        urls: renderUrls(additionalInformation?.urls),
+        testsResult: additionalInformation?.testsResult || "Unknown",
+        prevAnswers: additionalInformation?.prevAnswers?.join("\n") || "Unknown",
+    }
+}
+
+export async function startGoalAgent(settings: IAgentSettings, goal: string, additionalInformation?: IAdditionalInformation): Promise<{result: Partial<ITask>[], prompt: string, raw: string}> {
+    (window as any).numRequests++
+    const prompt = startGoalPrompt(goal, settings.language || 'en', renderInfo(additionalInformation, settings)) 
+    const res = await getAnswer(prompt, settings)
+    const result = extractTasks(res, []).map((stringOne) => {
+        return {
+            content: stringOne,
+            created: new Date().toISOString(),
+        }
+    })
+    return {result, prompt, raw: res}
+}
+
+
 export async function executeTaskAgent(
     modelSettings: ModelSettings,
     goal: string,
@@ -57,15 +78,8 @@ export async function executeTaskAgent(
     additionalInformation?: IAdditionalInformation
 ): Promise< {result, prompt}> {
     (window as any).numRequests++
-    const prompt = executeTaskPrompt(goal, task.content, settings.language || 'en', {
-        fromUser: renderFromUser(additionalInformation?.fromUser),
-        fileSystem: [...(additionalInformation?.fileSystem || []), settings.dirs?.join(", ")].filter(Boolean).join(', ') || "Unknown",
-        files: renderFiles(additionalInformation?.files),
-        urls: renderUrls(additionalInformation?.urls),
-        testsResult: additionalInformation?.testsResult || "Unknown",
-        prevAnswers: additionalInformation?.prevAnswers?.join("\n") || "Unknown",
-    }, settings) 
-    const result = await ((window as any).api as SimpleGPT).getFirst(prompt, settings)
+    const prompt = executeTaskPrompt(goal, task.content, settings.language || 'en', renderInfo(additionalInformation, settings), settings) 
+    const result = await getAnswer(prompt, settings)
 
     return {result, prompt}
 }
@@ -77,7 +91,7 @@ export async function createTasksAgent(
     lastTask: ITask,
     result: string,
     completedTasks: string[] | undefined
-): Promise<ITask[]> {
+): Promise<Partial<ITask>[]> {
     (window as any).numRequests++
     const completion = await new LLMChain({
         llm: createModel(modelSettings),

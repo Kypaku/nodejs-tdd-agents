@@ -33,6 +33,7 @@ export interface IAdditionalInformation {
     prevAnswers?: string[]
 } 
 export interface ITask {
+    id: string
     content?: string
     created?: string
     completed?: string
@@ -59,4 +60,5 @@ export interface IMessage {
     value?: string
     type?: 'system' | 'action' | 'thinking' | 'goal' | 'task' | 'tests' | 'hidden'
     time: number
+    taskId?: string
 }

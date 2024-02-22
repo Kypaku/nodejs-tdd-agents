@@ -14,7 +14,7 @@ import { updateAgent } from "@/api/json"
 import { IAgent, IMessage, ITask } from "@/types"
 import { getFilesInDirectory } from "@/helpers"
 import { createDirectoryR, existFile, isParentDirectoryR, parentDirectories, parentDirectory, readFile, runAsync, runSync, sleep, writeFile } from "@/helpers/node_gm"
-import { handleContentBeforeWrite } from "@/utils/contentHandlers"
+import { filterTestResult, handleContentBeforeWrite } from "@/utils/contentHandlers"
 import { fixPrompt } from "@/utils/prompts"
 import * as path from 'path'
 import { getContentFromRes, getPathFromRes, recognizeCommand } from "@/helpers/recognizeCommand"
@@ -175,7 +175,7 @@ class AutonomousAgent {
 
     completeTask(currentTask: ITask, result: string) {
         if (currentTask) {
-            this.sendMessage({ type: "system", value: `Task completed: ${currentTask.content}` })
+            this.sendMessage({ type: "system", value: `Task completed: ${currentTask.content}`, taskId: currentTask.id})
             currentTask.result = result
             currentTask.completed = new Date().toISOString()
             this.saveTasks()
@@ -194,11 +194,12 @@ class AutonomousAgent {
         this.sendMessage({ type: "system", value: "Getting tasks..." })
         const { result, raw, prompt } = await startGoalAgent(this.agent.settings || {}, this.goal, this.tasks.at(-1)?.additionalInformation)
         result.forEach((re) => {
+            re.id = v4()
             re.additionalInformation = re.additionalInformation || {}
             re.additionalInformation.fileSystem = this.getFileSystem()
         })
         this.sendMessage({ type: "hidden", value: raw, prompt })
-        this.tasks.push(...result)
+        this.tasks.push(...(result as ITask[]))
         this.saveTasks()
     }
 
@@ -206,7 +207,7 @@ class AutonomousAgent {
         currentTask: ITask,
         result: string
     ): Promise<ITask[]> {
-        return await createTasksAgent(
+        const res = await createTasksAgent(
             this.modelSettings,
             this.goal,
             this.tasks,
@@ -214,6 +215,12 @@ class AutonomousAgent {
             result,
             this.completedTasks
         )
+        res.forEach((re) => {
+            re.id = v4()
+            re.additionalInformation = re.additionalInformation || {}
+            re.additionalInformation.fileSystem = this.getFileSystem()
+        })
+        return res as ITask[]
     }
 
     async handleTaskResult(task: ITask, taskResult: string) {
@@ -226,7 +233,7 @@ class AutonomousAgent {
             path && this.addFileToTask(path, task)
         } else if (recognizeCommand(taskResult, AgentCommands.WRITE_FILE_CONTENT) && this.agent.settings.allowWrite) {
             const { path, content } = getContentFromRes(taskResult)
-            path && this.writeFile(path, content)
+            path && this.writeFile(path, content, task)
         } else if (!taskResult.indexOf(AgentCommands.NEED_URL_CONTENT)) {
             console.log("NEED_URL_CONTENT", taskResult)
             const url = taskResult.split(':').slice(1).join(':').trim()
@@ -256,14 +263,14 @@ class AutonomousAgent {
                 for await (const test of this.agent.settings.tests) {
                     const testCmd = `cd ${this.agent.dir} && ${test}`
                     const result = await runAsync(testCmd)
-                    testsResult += result + '\n'
+                    testsResult += filterTestResult(result) + '\n'
                 }
             }
         } catch (e) {
             console.error('runTests:' + e)
         }
         console.log("runTests", { testsResult })
-        this.sendMessage({ type: "tests", value: testsResult })
+        this.sendMessage({ type: "tests", value: testsResult, taskId: task.id})
         task.additionalInformation.testsResult = testsResult
         const testsValue = testsResult.match(/Tests:.*?\n/)?.[0]
         let total = +testsValue?.match(/(\d+) total/)?.[1] || 0
@@ -302,7 +309,7 @@ class AutonomousAgent {
         }
     }
 
-    writeFile(_path: string, content: string) {
+    writeFile(_path: string, content: string, task: ITask) {
         // check if the agent is allowed to write files
         if (!this.agent.settings.allowWrite) {
             this.sendErrorMessage(`errors.agent-not-allowed-to-write`)
@@ -320,7 +327,7 @@ class AutonomousAgent {
             this.sendErrorMessage(`errors.file-not-in-allowed-dirs: ` + _path)
             return
         }
-        if (path.basename(_path) === 'package.json' || path.dirname(_path).includes('/tests')) {
+        if (path.basename(_path) === 'package.json' || path.dirname(_path).match(/(\/|\\)tests/)) {
             this.sendErrorMessage(`errors.forbidden-to-write: ` + _path)
             return
         }
@@ -328,9 +335,11 @@ class AutonomousAgent {
         if (!existFile(parentDir)) {
             createDirectoryR(parentDir)
         }
-        writeFile(_path, handleContentBeforeWrite(_path, content))
+        const handledContent = handleContentBeforeWrite(_path, content)
+        writeFile(_path, handledContent)
+        this.addFileToTask(_path, task)
         setTimeout(() => {
-            this.sendMessage({ type: "system", value: `File written: ${_path}` })
+            this.sendMessage({ type: "system", value: `File written: ${_path}`, taskId: task.id})
         }, 0)
     }
 
@@ -425,7 +434,7 @@ class AutonomousAgent {
     }
 
     sendThinkingMessage(msg: string) {
-        this.sendMessage({ type: "thinking", value: "Thinking... " + (this.agent.settings.sequentialMode ? '' : msg) })
+        this.sendMessage({ type: "thinking", value: "Thinking... " + msg })
     }
 
     sendTaskMessage(task: string) {
