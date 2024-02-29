@@ -119,7 +119,7 @@ class AutonomousAgent {
 
         if (this.agent.settings.sequentialMode) {
             const currentTask = this.uncompletedTasks[0]
-            const currentTaskIndex = this.tasks.findIndex((task) => task.id === currentTask.id) 
+            const currentTaskIndex = this.tasks.findIndex((task) => task.id === currentTask.id)
             this.sendThinkingMessage(currentTaskIndex + ': ' + currentTask.content)
 
             const { result, prompt } = await this.executeTask(currentTask as ITask)
@@ -176,7 +176,7 @@ class AutonomousAgent {
 
     completeTask(currentTask: ITask, result: string) {
         if (currentTask) {
-            this.sendMessage({ type: "system", value: `Task completed: ${currentTask.content}`, taskId: currentTask.id})
+            this.sendMessage({ type: "system", value: `Task completed: ${currentTask.content}`, taskId: currentTask.id })
             currentTask.result = result
             currentTask.completed = new Date().toISOString()
             const nextTask = this.uncompletedTasks[0]
@@ -238,8 +238,10 @@ class AutonomousAgent {
             const path = getPathFromRes(taskResult)
             path && this.addFileToTask(path, task)
         } else if (recognizeCommand(taskResult, AgentCommands.WRITE_FILE_CONTENT) && this.agent.settings.allowWrite) {
-            const { path, content } = getContentFromRes(taskResult)
-            path && this.writeFile(path, content, task)
+            const reses = getContentFromRes(taskResult)
+            reses.forEach(({path, content}) => {
+                path && this.writeFile(path, content, task)
+            })
         } else if (!taskResult.indexOf(AgentCommands.NEED_URL_CONTENT)) {
             console.log("NEED_URL_CONTENT", taskResult)
             const url = taskResult.split(':').slice(1).join(':').trim()
@@ -276,7 +278,7 @@ class AutonomousAgent {
             console.error('runTests:' + e)
         }
         console.log("runTests", { testsResult })
-        this.sendMessage({ type: "tests", value: testsResult, taskId: task.id})
+        this.sendMessage({ type: "tests", value: testsResult, taskId: task.id })
         task.additionalInformation.testsResult = testsResult
         const testsValue = testsResult.match(/Tests:.*?\n/)?.[0]
         let total = +testsValue?.match(/(\d+) total/)?.[1] || 0
@@ -345,7 +347,7 @@ class AutonomousAgent {
         writeFile(_path, handledContent)
         this.addFileToTask(_path, task)
         setTimeout(() => {
-            this.sendMessage({ type: "system", value: `File written: ${_path}`, taskId: task.id})
+            this.sendMessage({ type: "system", value: `File written: ${_path}`, taskId: task.id })
         }, 0)
     }
 

@@ -64,6 +64,7 @@ export async function startGoalAgent(settings: IAgentSettings, goal: string, add
         return {
             content: stringOne,
             created: new Date().toISOString(),
+            additionalInformation,
         }
     })
     return {result, prompt, raw: res}

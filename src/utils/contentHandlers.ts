@@ -8,7 +8,7 @@ export function handleContentBeforeWrite(path: string, content: string): string 
             .replace(/(^|\n)\s?(\`\`\`)?\s?plaintext?/g, '')
             .replace(/(^|\n)plaintext(\n|$)/g, '')
             .replace(/\`\`\`/, '')
-            .replace(/^([а-яА-ЯёЁ])/ugm, '//$1')
+            .replace(/^([а-яА-ЯёЁ0-9])/ugm, '//$1')
             .replaceAll(AgentCommands.COMPLETE_TASK, '')
             .replaceAll(new RegExp(`\\n${AgentCommands.NEED_FILE_CONTENT}.+?(\\n|$)`, 'g'), '\n')
             .replace(/^\`/, '')

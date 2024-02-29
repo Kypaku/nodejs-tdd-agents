@@ -40,11 +40,20 @@ export interface IFileContent {
     content: string
 }
 
-export function getContentFromRes(res: string): IFileContent {
-    const path = res.split(AgentCommands.WRITE_FILE_CONTENT)[1].trim().split('\n')[0].trim().replace(": ", "")
-    const content = res.split(AgentCommands.WRITE_FILE_CONTENT)[1]
-        .trim().split('\n').slice(1).join('\n')
-    return { path, content }
+
+export function getContentFromRes(res: string): IFileContent[] {
+    const commandPattern = /WRITE_FILE_CONTENT:(.*?)\n([\s\S]*?)(?=\nWRITE_FILE_CONTENT:|$)/g
+    let match
+    const contents = [] as IFileContent[]
+
+    while ((match = commandPattern.exec(res)) !== null) {
+        // Extracting path and content from each match
+        const path = match[1].trim()
+        const content = match[2].trim()
+        contents.push({ path, content })
+    }
+
+    return contents
 }
 
 export function getPathFromRes(res: string): string {
