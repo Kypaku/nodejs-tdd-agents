@@ -42,7 +42,8 @@ export interface IFileContent {
 
 export function getContentFromRes(res: string): IFileContent {
     const path = res.split(AgentCommands.WRITE_FILE_CONTENT)[1].trim().split('\n')[0].trim().replace(": ", "")
-    const content = res.split(AgentCommands.WRITE_FILE_CONTENT)[1].trim().split('\n').slice(1).join('\n')
+    const content = res.split(AgentCommands.WRITE_FILE_CONTENT)[1]
+        .trim().split('\n').slice(1).join('\n')
     return { path, content }
 }
 

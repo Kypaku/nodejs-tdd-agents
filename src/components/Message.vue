@@ -10,7 +10,7 @@
                 <div :key="i" class="code-block mb-1" v-if="segment.isCode">
                     <pre class="overflow-auto max-h-80"><code>{{ segment.text.trim()}}</code></pre>
                 </div>
-                <span :key="i + 'text'" v-else>{{ segment.text }}</span>
+                <span :key="i + 'text'" :class="{'text-yellow-100': isFileWrittenMessage(message)}" v-else>{{ segment.text }}</span>
             </template>
             <div>
                 <button @click="test(message)" class="bg-gray-700 opacity-50" >Test</button>
@@ -78,6 +78,9 @@
             },
         },
         methods: {
+            isFileWrittenMessage(message: IMessage): boolean {
+                return message.value.includes('File written:')
+            },
             test(message) {
                 const task = this.agent.agentInstance.uncompletedTasks[0] || this.agent.agentInstance.tasks[0]
                 console.log('test', this.agent?.agentInstance, this.messages, { message });

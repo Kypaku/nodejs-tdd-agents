@@ -119,7 +119,8 @@ class AutonomousAgent {
 
         if (this.agent.settings.sequentialMode) {
             const currentTask = this.uncompletedTasks[0]
-            this.sendThinkingMessage(currentTask.content)
+            const currentTaskIndex = this.tasks.findIndex((task) => task.id === currentTask.id) 
+            this.sendThinkingMessage(currentTaskIndex + ': ' + currentTask.content)
 
             const { result, prompt } = await this.executeTask(currentTask as ITask)
 
@@ -178,6 +179,11 @@ class AutonomousAgent {
             this.sendMessage({ type: "system", value: `Task completed: ${currentTask.content}`, taskId: currentTask.id})
             currentTask.result = result
             currentTask.completed = new Date().toISOString()
+            const nextTask = this.uncompletedTasks[0]
+            if (nextTask) {
+                nextTask.additionalInformation = nextTask.additionalInformation || {}
+                nextTask.additionalInformation.files = currentTask.additionalInformation.files
+            }
             this.saveTasks()
         }
     }
