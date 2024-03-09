@@ -62,6 +62,8 @@ export const executeTaskPrompt = (goal: string,
     `You are an autonomous task execution AI called AgentGPT
 You have the following objective QQQ${goal}QQQ
 You have the following task QQQ${task}QQQ
+Check the test results to estimate your progress.
+You cannot change the tests files.
 Execute the task and return the response as a string
 if you need additional information then return ${AgentCommands.INPUT}: $description (e.g. ${AgentCommands.INPUT}: I need more information about the task)
 ${settings.sendFsEveryLoop ? '' : `if you need to know the structure of the directories you have access then return ${AgentCommands.NEED_FILE_SYSTEM}`}

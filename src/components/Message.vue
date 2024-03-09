@@ -1,6 +1,12 @@
 <template>
     <div class="message text-sm mt-2" >
-        <span>{{ index }}: </span>
+        <div class="flex-center-between">
+            <span>{{ index }}: </span>
+            <div>
+                <button @click="$emit('delete')" class="bg-gray-300 px-1 text-black mr-1" >Del</button> 
+                <button @click="$emit('deleteUp')" class="bg-gray-300 px-1 text-black" >Del all above</button> 
+            </div>
+        </div>
         <div>
             <span class="text-xs text-gray-400"  v-if="message.time">{{ new Date(message.time).toLocaleString() }}</span>
         </div>

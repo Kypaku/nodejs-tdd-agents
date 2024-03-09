@@ -24,5 +24,6 @@ export function filterTestResult(str: string): string {
     const res = str.split(triggerLine)[0]
         .replaceAll('node_modules/supertest/lib', '')
         .replaceAll('node_modules/superagent/', '')
+        .replaceAll(/\sTest failed[\s\S]+?\.js:\d+:\d+\)/g, '')
     return res
 }

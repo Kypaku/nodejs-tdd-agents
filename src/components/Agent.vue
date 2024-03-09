@@ -57,6 +57,7 @@
                 :task="task"
                 @editTask="editTask(i)"
                 @completeTask="completeTask(i)"
+                @uncompleteTask="uncompleteTask(i)"
                 @editAdditionalInfo="data => editAdditionalInfo(i, data)"
                 :index="i + 1"
                 v-for="(task, i) in tasks"
@@ -87,6 +88,8 @@
                 v-for="(item, i) in filteredMessages"
                 :agent="agent"
                 :index="filteredMessages.length - i"
+                @delete="deleteMessage(item)"
+                @deleteUp="deleteUp(item)"
                 :key="item.time"/>
         </div>
     </div>
@@ -162,6 +165,24 @@
             }
         },
         methods: {
+            uncompleteTask(i: number) {
+                this.agentInstance.tasks[i].completed = null
+                this.agentInstance.tasks[i].result = null
+                this.updateAgent('tasks', this.agentInstance.tasks)
+            },
+           
+            deleteUp(item: IMessage) {
+                this.messages = this.messages.filter(m => m.time <= item.time)
+                clearAgentMessages(this.$route.params.id)
+                this.messages.forEach(m => addMessage(this.$route.params.id, m))
+            },
+
+            deleteMessage(item: IMessage) {
+                this.messages = this.messages.filter(m => m.time !== item.time)
+                clearAgentMessages(this.$route.params.id)
+                this.messages.forEach(m => addMessage(this.$route.params.id, m))
+            },
+
             editAdditionalInfo(i: number, data: any) {
                 this.agentInstance.tasks[i].additionalInformation = data
                 this.updateAgent('tasks', this.agentInstance.tasks)

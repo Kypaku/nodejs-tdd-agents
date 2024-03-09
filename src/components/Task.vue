@@ -4,8 +4,11 @@
         <button @click="$emit('editTask')" class="ml-2 text-sm text-gray-600">
             ✏️
         </button>
-        <button @click="$emit('completeTask')" class="ml-2 text-sm text-gray-600">
+        <button v-if="!task?.completed" @click="$emit('completeTask')" class="ml-2 text-sm text-gray-600">
             ✔️
+        </button>
+        <button v-else @click="$emit('uncompleteTask')" class="ml-2 text-sm text-gray-600">
+            ❌
         </button>
         <button @click="$emit('deleteTask')" class="ml-2 text-sm text-gray-600">
             <TrashIcon />
