@@ -10,7 +10,7 @@ VueCli 4
 ## Project setup
 
 ```
-git clone https://github.com/Kypaku/vue-gpt-agents
+git clone https://github.com/Kypaku/nodejs-tdd-agents
 ```
 
 ```
