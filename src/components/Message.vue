@@ -85,7 +85,7 @@
         },
         methods: {
             isFileWrittenMessage(message: IMessage): boolean {
-                return message.value.includes('File written:')
+                return message?.value?.includes('File written:')
             },
             test(message) {
                 const task = this.agent.agentInstance.uncompletedTasks[0] || this.agent.agentInstance.tasks[0]
